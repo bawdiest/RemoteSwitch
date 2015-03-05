@@ -1,43 +1,34 @@
-
 /*
-  Web client
+  WiFi Web Server
 
- This sketch connects to a website (http://www.google.com)
+ A simple web server that shows the value of the analog input pins.
  using a WiFi shield.
-
- This example is written for a network using WPA encryption. For
- WEP or WPA, change the Wifi.begin() call accordingly.
 
  This example is written for a network using WPA encryption. For
  WEP or WPA, change the Wifi.begin() call accordingly.
 
  Circuit:
  * WiFi shield attached
+ * Analog inputs attached to pins A0 through A5 (optional)
 
  created 13 July 2010
  by dlf (Metodo2 srl)
  modified 31 May 2012
  by Tom Igoe
- */
 
+ */
 
 #include <SPI.h>
 #include <WiFi.h>
 
-char ssid[] = "bawdiest"; //  your network SSID (name)
-char pass[] = "Gaffe2014";    // your network password (use for WPA, or use as key for WEP)
-int keyIndex = 0;            // your network key Index number (needed only for WEP)
+
+char ssid[] = "bawdiest";      // your network SSID (name)
+char pass[] = "Gaffe2014";   // your network password
+int keyIndex = 0;                 // your network key Index number (needed only for WEP)
 
 int status = WL_IDLE_STATUS;
-// if you don't want to use DNS (and reduce your sketch size)
-// use the numeric IP instead of the name for the server:
-//IPAddress server(74,125,232,128);  // numeric IP for Google (no DNS)
-char server[] = "www.mikmak.cc";    // name address for Google (using DNS)
 
-// Initialize the Ethernet client library
-// with the IP address and port of the server
-// that you want to connect to (port 80 is default for HTTP):
-WiFiClient client;
+WiFiServer server(80);
 
 void setup() {
   //Initialize serial and wait for port to open:
@@ -58,7 +49,7 @@ void setup() {
     Serial.println("Please upgrade the firmware");
 
   // attempt to connect to Wifi network:
-  while (status != WL_CONNECTED) {
+  while ( status != WL_CONNECTED) {
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
@@ -67,37 +58,75 @@ void setup() {
     // wait 10 seconds for connection:
     delay(10000);
   }
-  Serial.println("Connected to wifi");
+  server.begin();
+  // you're connected now, so print out the status:
   printWifiStatus();
+}
 
-  Serial.println("\nStarting connection to server...");
-  // if you get a connection, report back via serial:
-  if (client.connect(server, 80)) {
-    Serial.println("connected to server");
-    // Make a HTTP request:
-    client.println("GET /search?q=arduino HTTP/1.1");
-    client.println(server);
-    client.println("Connection: close");
-    client.println();
-  }
+long readVcc() {
+  long result;
+  // Read 1.1V reference against AVcc
+  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Convert
+  while (bit_is_set(ADCSRA,ADSC));
+  result = ADCL;
+  result |= ADCH<<8;
+  result = 1126400L / result; // Back-calculate AVcc in mV
+  return result;
 }
 
 void loop() {
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-  while (client.available()) {
-    char c = client.read();
-    Serial.write(c);
-  }
+  // listen for incoming clients
+  WiFiClient client = server.available();
+  if (client) {
+    Serial.println("new client");
+    // an http request ends with a blank line
+    boolean currentLineIsBlank = true;
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+        Serial.write(c);
+        // if you've gotten to the end of the line (received a newline
+        // character) and the line is blank, the http request has ended,
+        // so you can send a reply
+        if (c == '\n' && currentLineIsBlank) {
+          // send a standard http response header
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println("Connection: close");  // the connection will be closed after completion of the response
+          client.println("Refresh: 5");  // refresh the page automatically every 5 sec
+          client.println();
+          client.println("<!DOCTYPE HTML>");
+          client.println("<html>");
+          // output the value of each analog input pin
+          for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
+            int sensorReading = analogRead(analogChannel);
+            client.print("analog input ");
+            client.print(readVcc());
+            client.print(" is ");
+            client.print(sensorReading);
+            client.println("<br />");
+          }
+          client.println("</html>");
+          break;
+        }
+        if (c == '\n') {
+          // you're starting a new line
+          currentLineIsBlank = true;
+        }
+        else if (c != '\r') {
+          // you've gotten a character on the current line
+          currentLineIsBlank = false;
+        }
+      }
+    }
+    // give the web browser time to receive the data
+    delay(1);
 
-  // if the server's disconnected, stop the client:
-  if (!client.connected()) {
-    Serial.println();
-    Serial.println("disconnecting from server.");
+    // close the connection:
     client.stop();
-
-    // do nothing forevermore:
-    while (true);
+    Serial.println("client disonnected");
   }
 }
 
@@ -118,8 +147,4 @@ void printWifiStatus() {
   Serial.print(rssi);
   Serial.println(" dBm");
 }
-
-
-
-
 
