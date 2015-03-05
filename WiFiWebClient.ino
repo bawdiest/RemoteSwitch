@@ -1,29 +1,24 @@
 /*
   WiFi Web Server
-
  A simple web server that shows the value of the analog input pins.
  using a WiFi shield.
-
  This example is written for a network using WPA encryption. For
  WEP or WPA, change the Wifi.begin() call accordingly.
-
  Circuit:
  * WiFi shield attached
  * Analog inputs attached to pins A0 through A5 (optional)
-
  created 13 July 2010
  by dlf (Metodo2 srl)
  modified 31 May 2012
  by Tom Igoe
-
  */
 
 #include <SPI.h>
 #include <WiFi.h>
 
 
-char ssid[] = "bawdiest";      // your network SSID (name)
-char pass[] = "Gaffe2014";   // your network password
+char ssid[] = "bawdiestNet";      // your network SSID (name)
+char pass[] = "nkensleg8";   // your network password
 int keyIndex = 0;                 // your network key Index number (needed only for WEP)
 
 int status = WL_IDLE_STATUS;
@@ -100,14 +95,9 @@ void loop() {
           client.println("<!DOCTYPE HTML>");
           client.println("<html>");
           // output the value of each analog input pin
-          for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
-            int sensorReading = analogRead(analogChannel);
-            client.print("analog input ");
+            client.print("input Voltage is: ");
             client.print(readVcc());
-            client.print(" is ");
-            client.print(sensorReading);
             client.println("<br />");
-          }
           client.println("</html>");
           break;
         }
@@ -147,4 +137,3 @@ void printWifiStatus() {
   Serial.print(rssi);
   Serial.println(" dBm");
 }
-
