@@ -9,7 +9,10 @@ echo $_SERVER['REMOTE_ADDR'];
 echo ("Hallo");
 $server = $_SERVER['REMOTE_ADDR'];
 
-$query = "INSERT INTO msgLog (msgid, var1, var2, var3, var4) VALUES ('18', '$server', '2', '3', '4')";
+if(isset($_GET['msgID'])) {$msgID = $_GET['msgID'];};
+if(isset($_GET['var1'])) {$var1 = $_GET['var1'];};
+
+$query = "INSERT INTO msgLog (msgid, var1, var2, var3, var4) VALUES ($msgID, $var1, 2, 3, 4)";
 
 if (!mysqli_query($con, $query)) {
   die('Error: ' . mysqli_error($con));
