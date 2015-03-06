@@ -5,8 +5,10 @@ if (mysqli_connect_errno()) {
   echo "Failed to connect to MySQL: " . mysqli_connect_error();
 }
 
-echo $_SERVER['REMOTE_ADDR'];
-echo ("Hallo");
+//echo $_SERVER['REMOTE_ADDR'];
+
+echo ($_GET['msgID']);
+echo ($_GET['var1']);
 $server = $_SERVER['REMOTE_ADDR'];
 
 if(isset($_GET['msgID'])) {$msgID = $_GET['msgID'];};

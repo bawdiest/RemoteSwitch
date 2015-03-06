@@ -33,7 +33,7 @@ char server[] = "www.mikmak.cc";
 
 unsigned long lastConnectionTime = 0;           // last time you connected to the server, in milliseconds
 boolean lastConnected = false;                  // state of the connection last time through the main loop
-const unsigned long postingInterval = 10*1000;  // delay between updates, in milliseconds
+const unsigned long postingInterval = 20*1000;  // delay between updates, in milliseconds
 
 void setup() {
   //Initialize serial and wait for port to open:
@@ -96,10 +96,14 @@ void httpRequest() {
   if (client.connect(server, 80)) {
     Serial.println("connecting...");
     // send the HTTP PUT request:
-    client.println("GET /post/index.php?msgID=133&var1=");
-    client.println(readVcc());
-    client.println("HTTP/1.1");
-    client.println("Host: www.arduino.cc");
+    String get = "GET /post/index.php?msgID=133&var1=";
+    get += readVcc();
+    get += " HTTP/1.1";
+    //client.println("GET /post/index.php?msgID=133&var1=");
+    //client.println(readVcc());
+    //client.println(" HTTP/1.1");
+    client.println(get);
+    client.println("Host: www.mikmak.cc");
     client.println("User-Agent: arduino-ethernet");
     client.println("Connection: close");
     client.println();
