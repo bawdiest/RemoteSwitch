@@ -14,7 +14,7 @@
  http://arduino.cc/en/Tutorial/WifiWebClientRepeating
  This code is in the public domain.
  */
-
+#include "LowPower.h"
 #include <SPI.h>
 #include <WiFi.h>
 
@@ -33,7 +33,7 @@ char server[] = "www.mikmak.cc";
 
 unsigned long lastConnectionTime = 0;           // last time you connected to the server, in milliseconds
 boolean lastConnected = false;                  // state of the connection last time through the main loop
-const unsigned long postingInterval = 20*1000;  // delay between updates, in milliseconds
+const unsigned long postingInterval = 600;  // delay between updates, in milliseconds
 
 void setup() {
   //Initialize serial and wait for port to open:
@@ -48,8 +48,11 @@ void setup() {
     // don't continue:
     while(true);
   } 
-  
-  // attempt to connect to Wifi network:
+
+}
+
+void loop() {
+    // attempt to connect to Wifi network:
   while ( status != WL_CONNECTED) { 
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
@@ -59,11 +62,9 @@ void setup() {
     // wait 10 seconds for connection:
     delay(10000);
   } 
+  
   // you're connected now, so print out the status:
   printWifiStatus();
-}
-
-void loop() {
   // if there's incoming data from the net connection.
   // send it out the serial port.  This is for debugging
   // purposes only:
@@ -80,18 +81,23 @@ void loop() {
     client.stop();
   }
 
-  // if you're not connected, and ten seconds have passed since
-  // your last connection, then connect again and send data:
-  if(!client.connected() && (millis() - lastConnectionTime > postingInterval)) {
-    httpRequest();
+  // if you're not connected, then connect again and send data:
+  if(!client.connected()) {
+    postData();
   }
   // store the state of the connection for next time through
   // the loop:
   lastConnected = client.connected();
+  
+    //If the interval between connections is not passed, then sleep.
+  while(millis() - lastConnectionTime < postingInterval) {
+    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+  }
+  
 }
 
 // this method makes a HTTP connection to the server:
-void httpRequest() {
+void postData() {
   // if there's a successful connection:
   if (client.connect(server, 80)) {
     Serial.println("connecting...");
